@@ -1,0 +1,195 @@
+﻿@page "/termo"
+@using TermoSolver.Models
+@using TermoSolver.Services
+@using TermoSolver.Services.Solver;
+@inject HttpClient Http
+@inject IWordSolver WordSolver
+
+<PageTitle>Termo</PageTitle>
+
+<h1>Salvatore - Termo</h1>
+
+<button class="btn btn-primary" @onclick="LoadDictionary">Load Dictionary</button>
+
+<style>
+    #new-word{
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .word-section{
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 5px;
+    }
+</style>
+
+@if (Attempts.Any())
+{
+    <div id="#history">
+        @foreach (var word in Attempts)
+        {
+            <div class="word-section">
+                @for (int i = 0; i < word.Length; i++)
+                {
+                    int j = i;
+                    <button disabled="true" @onclick="() => CharacterClick(j)" class="btn @StateClass[word[j].State] btn-lg">@word[j].Character</button>
+                }
+            </div>
+        }
+    </div>
+}
+
+@if(NoMoreWords){
+    <p>Nao sei mais :(</p>
+} else{
+    <div id="new-word">
+
+    @for (int i = 0; i < WordCandidate.Length; i++)
+    {
+        int j = i;
+        <button @onclick="() => CharacterClick(j)" class="btn @StateClass[WordCandidate[j].State] btn-lg">@WordCandidate[j].Character</button>
+    }
+</div>
+}
+
+
+<div class="word-section">
+    <button style="margin-left=60px" @onclick="GuessWord" class="btn btn-primary btn-lg">Guess</button>
+</div>
+
+
+@if (WordScores != null)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Word</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var wordScore in WordScores)
+            {
+                <tr>
+                    <td>@wordScore.Word</td>
+                    <td>@wordScore.Score</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IEnumerable<WordScore>? WordScores;
+    private WordFilter GlobalFilter = new WordFilter();
+    private bool NoMoreWords = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        WordScores = await Http.GetFromJsonAsync<WordScore[]>("sample-data/word-score.json");
+        WordScores = WordScores.Distinct(new WordScoreComparer());
+    }
+
+    private Dictionary<CharacterState, string> StateClass = new Dictionary<CharacterState, string>()
+    {
+        { CharacterState.RightPosition, "btn-success" },
+        { CharacterState.WrongPosition, "btn-warning" },
+        { CharacterState.WrongCharacter, "btn-dark"}
+    };
+
+    private List<WordState[]> Attempts = new List<WordState[]>();
+
+    private WordState[] WordCandidate = new WordState[5]
+    {   new WordState(){ Character = 'B', State = CharacterState.WrongCharacter },
+        new WordState(){ Character = 'O', State = CharacterState.WrongCharacter },
+        new WordState(){ Character = 'L', State = CharacterState.WrongCharacter },
+        new WordState(){ Character = 'A', State = CharacterState.WrongCharacter },
+        new WordState(){ Character = 'S', State = CharacterState.WrongCharacter },
+    };
+
+    private void GuessWord()
+    {
+        Attempts.Add((WordState[])WordCandidate.Clone());
+        WordSolver.IterateFilter(GlobalFilter, WordCandidate);
+
+        var candidate = WordSolver.GetNextWord(WordScores, GlobalFilter);
+
+        if (candidate == null)
+        {
+            NoMoreWords = true;
+            return;
+        }
+
+        for(int i = 0; i < candidate?.Length; i++)
+        {
+            WordCandidate[i] = new WordState()
+                {
+                    Character = candidate[i],
+                    State = WordCandidate[i].State == CharacterState.RightPosition ?
+                        CharacterState.RightPosition : CharacterState.WrongCharacter,
+                };
+        }
+    }
+
+    private void CharacterClick(int position)
+    {
+        var currentState = WordCandidate[position].State;
+
+        var nStates = Enum.GetValues(typeof(CharacterState)).Length;
+
+        WordCandidate[position].State = (int)currentState == nStates - 1 ?
+        CharacterState.WrongCharacter : (CharacterState)(int)currentState + 1;
+    }
+
+
+
+    private async Task LoadDictionary()
+    {
+        WordScores = await Http.GetFromJsonAsync<WordScore[]>("sample-data/word-score.json");
+        WordScores = WordScores.Distinct(new WordScoreComparer());
+
+        var prohibitedChars = new List<GroupChar>();
+        var singleChars = new List<char>("RISETUCVONH");
+        singleChars.ForEach(c => prohibitedChars.Add(new GroupChar(c, 1)));
+        //prohibitedChars.Where(c => c.Character == 'O').First().Frequency = 2;
+
+        var bestWord = WordSolver.GetNextWords(WordScores, new WordFilter()
+            {
+                ProhibitedChars = prohibitedChars,
+                AllowedChars = "PO--A".ToCharArray(),
+                MisplacedChars = new List<PositionalChar>()/*
+                {
+                    new PositionalChar()
+                    {
+                        Character = 'U',
+                        Position = new List<int>()
+                        {
+                            2
+                        }
+                    },
+                    new PositionalChar()
+                    {
+                        Character = 'T',
+                        Position = new List<int>()
+                        {
+                            3
+                        }
+                    },
+                }*/
+
+            });
+        WordScores = bestWord; //new List<WordScore>() { new WordScore(bestWord, -1) };
+    }
+
+    
+}
