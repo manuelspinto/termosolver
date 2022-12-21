@@ -1,12 +1,15 @@
-﻿using static TermoSolver.Pages.Solver;
-
-namespace TermoSolver.Services.Solver
+﻿namespace TermoSolver.Services.Solver
 {
     public class WordFilter
     {
         public List<GroupChar> ProhibitedChars = new List<GroupChar>();
         public char[] AllowedChars = new char[5];
         public List<PositionalChar> MisplacedChars = new List<PositionalChar>();
+
+        public WordFilter()
+        {
+            AllowedChars = new char[] { '-', '-', '-', '-', '-' };
+        }
 
     }
 

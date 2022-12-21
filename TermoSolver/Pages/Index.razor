@@ -1,9 +1,15 @@
 ﻿@page "/"
+@inject NavigationManager NavManager
 
-<PageTitle>Index</PageTitle>
+<PageTitle>O Solemio</PageTitle>
 
-<h1>Hello, world!</h1>
+<p>
+    <img src="images/solemio.jpg" />
+</p>
 
-Welcome to your new app.
-
-<SurveyPrompt Title="How is Blazor working for you?" />
+@code {
+    protected override void OnInitialized()
+    {
+        NavManager.NavigateTo("/termo");
+    }
+}

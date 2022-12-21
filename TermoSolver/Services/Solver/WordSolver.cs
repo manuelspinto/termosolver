@@ -1,20 +1,40 @@
-﻿using System.Security.Cryptography.X509Certificates;
+﻿using System.Diagnostics;
+using System.Security.Cryptography.X509Certificates;
 using TermoSolver.Models;
 
 namespace TermoSolver.Services.Solver
 {
     public class WordSolver : IWordSolver
     {
+        private const decimal RandomMatchThresholdPercentage = 0.95m;
+
         public string? GetNextWord(IEnumerable<WordScore> words, WordFilter filter)
         {
             var filteredWords = FilterDictionary(words, filter);
-            return filteredWords.OrderByDescending(x => x.Score).FirstOrDefault()?.Word;
+            return filteredWords.Any() ? BestMatch(filteredWords) : null;
         }
 
         public IEnumerable<WordScore>? GetNextWords(IEnumerable<WordScore> words, WordFilter filter)
         {
             var filteredWords = FilterDictionary(words, filter);
             return filteredWords.OrderByDescending(x => x.Score);
+        }
+
+        private string? BestMatch(IEnumerable<WordScore> filteredWords)
+        {
+            int lowScore = filteredWords.OrderBy(x => x.Score).First().Score;
+            int highScore = filteredWords.OrderByDescending(x => x.Score).First().Score;
+            int range = highScore - lowScore;
+
+            decimal minimumScore = lowScore + (range * RandomMatchThresholdPercentage);
+
+            var bestMatches = filteredWords.Where(x => x.Score > minimumScore);
+            var count = bestMatches.Count();
+
+            Random r = new Random();
+            var randomIndex = r.Next(0, count);
+
+            return bestMatches.ElementAt(randomIndex).Word;
         }
 
         public void IterateFilter(WordFilter filter, WordState[] wordState)
