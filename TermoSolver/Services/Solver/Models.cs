@@ -17,6 +17,7 @@
     {
         public char Character;
         public List<int> Position = new List<int>();
+        public int Frequency = 1;
     }
 
     public class GroupChar

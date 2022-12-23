@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Reflection.Metadata.Ecma335;
 using System.Security.Cryptography.X509Certificates;
 using TermoSolver.Models;
 
@@ -7,6 +8,12 @@ namespace TermoSolver.Services.Solver
     public class WordSolver : IWordSolver
     {
         private const decimal RandomMatchThresholdPercentage = 0.95m;
+
+        public string? GetBestWord(IEnumerable<WordScore> words, WordFilter filter)
+        {
+            var filteredWords = FilterDictionary(words, filter);
+            return filteredWords.OrderByDescending(w => w.Score).FirstOrDefault()?.Word;
+        }
 
         public string? GetNextWord(IEnumerable<WordScore> words, WordFilter filter)
         {
@@ -28,7 +35,7 @@ namespace TermoSolver.Services.Solver
 
             decimal minimumScore = lowScore + (range * RandomMatchThresholdPercentage);
 
-            var bestMatches = filteredWords.Where(x => x.Score > minimumScore);
+            var bestMatches = filteredWords.Where(x => x.Score >= minimumScore);
             var count = bestMatches.Count();
 
             Random r = new Random();
@@ -39,15 +46,17 @@ namespace TermoSolver.Services.Solver
 
         public void IterateFilter(WordFilter filter, WordState[] wordState)
         {
-            for(int i = 0; i < wordState.Length; i++)
+            for (int i = 0; i < wordState.Length; i++)
             {
                 var charState = wordState[i];
                 if (charState.State == CharacterState.RightPosition)
                 {
-                    if(filter.MisplacedChars.Any(x => x.Character == charState.Character) &&
+                    if (filter.MisplacedChars.Any(x => x.Character == charState.Character) &&
                         filter.AllowedChars[i] == '-')
                     {
-                        filter.MisplacedChars.RemoveAll(x => x.Character == charState.Character);
+                        filter.MisplacedChars.Where(x => x.Character == charState.Character).First().Frequency--;
+                        if(filter.MisplacedChars.Where(x => x.Character == charState.Character).First().Frequency == 0)
+                            filter.MisplacedChars.RemoveAll(x => x.Character == charState.Character);
                     }
 
                     filter.AllowedChars[i] = charState.Character;
@@ -56,8 +65,12 @@ namespace TermoSolver.Services.Solver
                 {
                     filter.AllowedChars[i] = '-';
                 }
+            }
 
-                if(charState.State == CharacterState.WrongCharacter)
+            for (int i = 0; i < wordState.Length; i++)
+            {
+                var charState = wordState[i];
+                if (charState.State == CharacterState.WrongCharacter)
                 {
                     if(!filter.ProhibitedChars
                         .Select(x => x.Character)
@@ -65,12 +78,10 @@ namespace TermoSolver.Services.Solver
                     {
                         filter.ProhibitedChars.Add(new GroupChar(charState.Character, 1));
                     }
-                    else
+
+                    if(filter.MisplacedChars.Any(x => x.Character == charState.Character))
                     {
-                        if (filter.AllowedChars.Contains(charState.Character))
-                        {
-                            filter.ProhibitedChars.Where(c => c.Character == charState.Character).First().Frequency++;
-                        }
+                        filter.MisplacedChars.Where(x => x.Character == charState.Character).First().Position.Add(i);
                     }
                 }
 
@@ -91,6 +102,25 @@ namespace TermoSolver.Services.Solver
                     }
                 }
             }
+
+            for (int i = 0; i < wordState.Length; i++)
+            {
+                var charState = wordState[i];
+                if (
+                    (
+                        filter.AllowedChars.Contains(charState.Character) ||
+                        filter.MisplacedChars.Any(c => c.Character == charState.Character)
+                    ) &&
+                    filter.ProhibitedChars.Where(c => c.Character == charState.Character).Any())
+                {
+                    filter.ProhibitedChars.Where(c => c.Character == charState.Character).First().Frequency =
+                        filter.ProhibitedChars.Count(c => c.Character == charState.Character) +
+                        filter.AllowedChars.Count(c => c == charState.Character) +
+                        filter.MisplacedChars.Count(c => c.Character == charState.Character);
+                }
+            }
+
+            filter.MisplacedChars.ForEach(c => c.Frequency = wordState.Count(ws => ws.Character == c.Character && ws.State == CharacterState.WrongPosition));
         }
 
         private static IEnumerable<WordScore> FilterDictionary(IEnumerable<WordScore> words, WordFilter filter)
@@ -98,6 +128,10 @@ namespace TermoSolver.Services.Solver
 
         private static bool FilterWord(string word, WordFilter filter)
         {
+            if (word == "UREIA")
+            {
+                string a = word;
+            }
             for (int i = 0; i < word.Length; i++)
             {
                 if (filter.ProhibitedChars.Select(c => c.Character).Contains(word[i]))
@@ -114,12 +148,11 @@ namespace TermoSolver.Services.Solver
             }
 
             var charGroup = filter.MisplacedChars
-                .GroupBy(cp => cp.Character)
-                .Select(c => new { Character = c.Key, Frequency = c.Count() + filter.AllowedChars.Count(a => a == c.Key) });
+                .Select(c => new { c.Character, Frequency = c.Frequency + filter.AllowedChars.Count(a => a == c.Character) });
 
             foreach (var cg in charGroup)
             {
-                if (word.Count(w => w == cg.Character) != cg.Frequency)
+                if (word.Count(w => w == cg.Character) < cg.Frequency)
                 {
                     return false;
                 }

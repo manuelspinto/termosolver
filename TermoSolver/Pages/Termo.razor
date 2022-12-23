@@ -126,6 +126,7 @@
         WordScores = await Http.GetFromJsonAsync<WordScore[]>("sample-data/word-score.json");
         WordScores = WordScores.Distinct(new WordScoreComparer());
 
+        //var startWord = "VACAS";
         var startWord = WordSolver.GetNextWord(WordScores, GlobalFilter);
 
         WordCandidate = new WordState[5];
@@ -146,11 +147,12 @@
 
     private void GuessWord()
     {
+        Attempts.Add((WordState[])WordCandidate.Clone());
         if(WordCandidate.Count(s => s.State == CharacterState.RightPosition) == WordCandidate.Length)
         {
             IsSuccess = true;
+            return;
         }
-        Attempts.Add((WordState[])WordCandidate.Clone());
         WordSolver.IterateFilter(GlobalFilter, WordCandidate);
 
         var candidate = WordSolver.GetNextWord(WordScores, GlobalFilter);
