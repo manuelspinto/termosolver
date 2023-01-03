@@ -1,4 +1,5 @@
 ﻿@page "/termo"
+@using System.Text.RegularExpressions;
 @using TermoSolver.Models
 @using TermoSolver.Services
 @using TermoSolver.Services.Solver;
@@ -121,13 +122,21 @@
     private bool IsSuccess = false;
     private WordState[]? WordCandidate;
 
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "word")]
+    public string InitialWord { get; set; } = string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
         WordScores = await Http.GetFromJsonAsync<WordScore[]>("sample-data/word-score.json");
         WordScores = WordScores.Distinct(new WordScoreComparer());
 
-        //var startWord = "VACAS";
-        var startWord = WordSolver.GetNextWord(WordScores, GlobalFilter);
+        var startWord = (
+                            !string.IsNullOrEmpty(InitialWord) &&
+                            InitialWord.Length == 5 &&
+                            Regex.IsMatch(InitialWord, @"^[a-zA-Z]+$")
+                        ) ?  InitialWord.ToUpper() : 
+                        WordSolver.GetNextWord(WordScores, GlobalFilter);
 
         WordCandidate = new WordState[5];
         for(int i = 0; i < WordCandidate.Length; i++)
@@ -183,44 +192,4 @@
         WordCandidate[position].State = (int)currentState == nStates - 1 ?
         CharacterState.WrongCharacter : (CharacterState)(int)currentState + 1;
     }
-
-    private async Task LoadDictionary()
-    {
-        WordScores = await Http.GetFromJsonAsync<WordScore[]>("sample-data/word-score.json");
-        WordScores = WordScores.Distinct(new WordScoreComparer());
-
-        var prohibitedChars = new List<GroupChar>();
-        var singleChars = new List<char>("RISETUCVONH");
-        singleChars.ForEach(c => prohibitedChars.Add(new GroupChar(c, 1)));
-        //prohibitedChars.Where(c => c.Character == 'O').First().Frequency = 2;
-
-        var bestWord = WordSolver.GetNextWords(WordScores, new WordFilter()
-            {
-                ProhibitedChars = prohibitedChars,
-                AllowedChars = "PO--A".ToCharArray(),
-                MisplacedChars = new List<PositionalChar>()/*
-                {
-                    new PositionalChar()
-                    {
-                        Character = 'U',
-                        Position = new List<int>()
-                        {
-                            2
-                        }
-                    },
-                    new PositionalChar()
-                    {
-                        Character = 'T',
-                        Position = new List<int>()
-                        {
-                            3
-                        }
-                    },
-                }*/
-
-            });
-        WordScores = bestWord; //new List<WordScore>() { new WordScore(bestWord, -1) };
-    }
-
-    
 }
