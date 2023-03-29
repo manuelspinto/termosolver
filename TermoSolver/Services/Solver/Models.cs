@@ -40,6 +40,7 @@
 
     public enum CharacterState
     {
+        Unknown,
         WrongCharacter,
         RightPosition,
         WrongPosition,
