@@ -128,10 +128,6 @@ namespace TermoSolver.Services.Solver
 
         private static bool FilterWord(string word, WordFilter filter)
         {
-            if (word == "UREIA")
-            {
-                string a = word;
-            }
             for (int i = 0; i < word.Length; i++)
             {
                 if (filter.ProhibitedChars.Select(c => c.Character).Contains(word[i]))
