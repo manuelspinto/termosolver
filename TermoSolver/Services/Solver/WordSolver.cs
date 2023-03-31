@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using System.Reflection.Metadata.Ecma335;
-using System.Security.Cryptography.X509Certificates;
-using TermoSolver.Models;
+﻿using TermoSolver.Models;
 
 namespace TermoSolver.Services.Solver
 {
