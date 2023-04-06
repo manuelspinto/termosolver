@@ -1,0 +1,31 @@
+﻿@page "/battle"
+@inject HttpClient Http
+
+<h3>Battle</h3>
+
+@if (ExecutionResults.Count == 0)
+{
+        <p><em>Loading...</em></p>
+}
+else
+{
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Initial</th>
+                    <th>Final</th>
+                    <th>Attempts</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var result in ExecutionResults)
+            {
+                        <tr>
+                            <td>@result.InitialWord</td>
+                            <td>@result.FinalWord</td>
+                            <td>@result.Attempts.Count</td>
+                        </tr>
+            }
+            </tbody>
+        </table>
+}

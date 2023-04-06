@@ -1,4 +1,4 @@
-﻿using TermoSolver.Services.Solver;
+﻿using TermoSolver.Services.Solver.Models;
 
 namespace TermoSolver.Extensions
 {

@@ -1,4 +1,4 @@
-﻿namespace TermoSolver.Services.Solver
+﻿namespace TermoSolver.Services.Solver.Models
 {
     public class WordFilter
     {
@@ -27,8 +27,8 @@
 
         public GroupChar(char character, int frequency)
         {
-            this.Character = character;
-            this.Frequency = frequency;
+            Character = character;
+            Frequency = frequency;
         }
     }
 

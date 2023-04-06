@@ -5,7 +5,7 @@ VisualStudioVersion = 17.1.32319.34
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TermoSolver", "TermoSolver\TermoSolver.csproj", "{14BC1E92-9D08-4304-823F-DFF3E9B793A7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TermoSolver.UnitTests", "TermoSolver.UnitTests\TermoSolver.UnitTests.csproj", "{6D084F53-52BA-4750-9F48-9DC673511773}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TermoSolver.UnitTests", "TermoSolver.UnitTests\TermoSolver.UnitTests.csproj", "{6D084F53-52BA-4750-9F48-9DC673511773}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

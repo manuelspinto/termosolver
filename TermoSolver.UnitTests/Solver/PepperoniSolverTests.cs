@@ -1,16 +1,18 @@
 ﻿using FluentAssertions;
 using TermoSolver.Models;
 using TermoSolver.Services.Solver;
+using TermoSolver.Services.Solver.Models;
+using TermoSolver.Services.Solver.SolverStrategies;
 
 namespace TermoSolver.UnitTests.Solver
 {
-    public class WordSolverTests
+    public class PepperoniSolverTests
     {
         private WordSolver Sut;
 
-        public WordSolverTests()
+        public PepperoniSolverTests()
         {
-            Sut = new WordSolver();
+            Sut = new PepperoniSolver();
         }
 
 
